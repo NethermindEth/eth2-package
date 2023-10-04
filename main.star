@@ -1,56 +1,33 @@
-parse_input = import_module(
-    "github.com/kurtosis-tech/ethereum-package/src/package_io/parse_input.star"
-)
+parse_input = import_module("./src/package_io/parse_input.star")
 
-participant_network = import_module(
-    "github.com/kurtosis-tech/ethereum-package/src/participant_network.star"
-)
+participant_network = import_module("./src/participant_network.star")
 
-static_files = import_module(
-    "github.com/kurtosis-tech/ethereum-package/src/static_files/static_files.star"
-)
+static_files = import_module("./src/static_files/static_files.star")
 genesis_constants = import_module(
-    "github.com/kurtosis-tech/ethereum-package/src/prelaunch_data_generator/genesis_constants/genesis_constants.star"
+    "./src/prelaunch_data_generator/genesis_constants/genesis_constants.star"
 )
 
 transaction_spammer = import_module(
-    "github.com/kurtosis-tech/ethereum-package/src/transaction_spammer/transaction_spammer.star"
+    "./src/transaction_spammer/transaction_spammer.star"
 )
-blob_spammer = import_module(
-    "github.com/kurtosis-tech/ethereum-package/src/blob_spammer/blob_spammer.star"
-)
-cl_forkmon = import_module(
-    "github.com/kurtosis-tech/ethereum-package/src/cl_forkmon/cl_forkmon_launcher.star"
-)
-el_forkmon = import_module(
-    "github.com/kurtosis-tech/ethereum-package/src/el_forkmon/el_forkmon_launcher.star"
-)
+blob_spammer = import_module("./src/blob_spammer/blob_spammer.star")
+cl_forkmon = import_module("./src/cl_forkmon/cl_forkmon_launcher.star")
+el_forkmon = import_module("./src/el_forkmon/el_forkmon_launcher.star")
 beacon_metrics_gazer = import_module(
-    "github.com/kurtosis-tech/ethereum-package/src/beacon_metrics_gazer/beacon_metrics_gazer_launcher.star"
+    "./src/beacon_metrics_gazer/beacon_metrics_gazer_launcher.star"
 )
-light_beaconchain_explorer = import_module(
-    "github.com/kurtosis-tech/ethereum-package/src/light_beaconchain/light_beaconchain_launcher.star"
+dora = import_module("./src/dora/dora_launcher.star")
+full_beaconchain_explorer = import_module(
+    "./src/full_beaconchain/full_beaconchain_launcher.star"
 )
-prometheus = import_module(
-    "github.com/kurtosis-tech/ethereum-package/src/prometheus/prometheus_launcher.star"
-)
-grafana = import_module(
-    "github.com/kurtosis-tech/ethereum-package/src/grafana/grafana_launcher.star"
-)
-mev_boost_launcher_module = import_module(
-    "github.com/kurtosis-tech/ethereum-package/src/mev_boost/mev_boost_launcher.star"
-)
-mock_mev_launcher_module = import_module(
-    "github.com/kurtosis-tech/ethereum-package/src/mock_mev/mock_mev_launcher.star"
-)
-mev_relay_launcher_module = import_module(
-    "github.com/kurtosis-tech/ethereum-package/src/mev_relay/mev_relay_launcher.star"
-)
-mev_flood_module = import_module(
-    "github.com/kurtosis-tech/ethereum-package/src/mev_flood/mev_flood_launcher.star"
-)
+prometheus = import_module("./src/prometheus/prometheus_launcher.star")
+grafana = import_module("./src/grafana/grafana_launcher.star")
+mev_boost_launcher_module = import_module("./src/mev_boost/mev_boost_launcher.star")
+mock_mev_launcher_module = import_module("./src/mock_mev/mock_mev_launcher.star")
+mev_relay_launcher_module = import_module("./src/mev_relay/mev_relay_launcher.star")
+mev_flood_module = import_module("./src/mev_flood/mev_flood_launcher.star")
 mev_custom_flood_module = import_module(
-    "github.com/kurtosis-tech/ethereum-package/src/mev_custom_flood/mev_custom_flood_launcher.star"
+    "./src/mev_custom_flood/mev_custom_flood_launcher.star"
 )
 
 GRAFANA_USER = "admin"
@@ -156,11 +133,13 @@ def run(plan, args={}):
         builder_uri = "http://{0}:{1}".format(
             all_el_client_contexts[-1].ip_addr, all_el_client_contexts[-1].rpc_port_num
         )
-        beacon_uri = [
-            "http://{0}:{1}".format(context.ip_addr, context.http_port_num)
-            for context in all_cl_client_contexts
-        ][-1]
-        beacon_uris = beacon_uri
+        beacon_uris = ",".join(
+            [
+                "http://{0}:{1}".format(context.ip_addr, context.http_port_num)
+                for context in all_cl_client_contexts
+            ]
+        )
+
         first_cl_client = all_cl_client_contexts[0]
         first_client_beacon_name = first_cl_client.beacon_service_name
         mev_flood_module.launch_mev_flood(
@@ -299,15 +278,32 @@ def run(plan, args={}):
                 beacon_metrics_gazer_prometheus_metrics_job
             )
             plan.print("Succesfully launched beacon metrics gazer")
-        elif additional_service == "light_beaconchain_explorer":
-            plan.print("Launching light-beaconchain-explorer")
-            light_beaconchain_explorer_config_template = read_file(
-                static_files.LIGHT_BEACONCHAIN_CONFIG_TEMPLATE_FILEPATH
-            )
-            light_beaconchain_explorer.launch_light_beacon(
-                plan, light_beaconchain_explorer_config_template, all_cl_client_contexts
-            )
-            plan.print("Succesfully light-beaconchain-explorer")
+        elif additional_service == "explorer":
+            if args_with_right_defaults.explorer_version == "dora":
+                plan.print("Launching dora")
+                dora_config_template = read_file(
+                    static_files.DORA_CONFIG_TEMPLATE_FILEPATH
+                )
+                dora.launch_dora(plan, dora_config_template, all_cl_client_contexts)
+                plan.print("Succesfully launched dora")
+            elif args_with_right_defaults.explorer_version == "full":
+                plan.print("Launching full-beaconchain-explorer")
+                full_beaconchain_explorer_config_template = read_file(
+                    static_files.FULL_BEACONCHAIN_CONFIG_TEMPLATE_FILEPATH
+                )
+                full_beaconchain_explorer.launch_full_beacon(
+                    plan,
+                    full_beaconchain_explorer_config_template,
+                    all_cl_client_contexts,
+                    all_el_client_contexts,
+                )
+                plan.print("Succesfully launched full-beaconchain-explorer")
+            else:
+                fail(
+                    "expected explorer_version to be one of (dora, full) but got {0} which is invalid".format(
+                        args_with_right_defaults.explorer_version
+                    )
+                )
         elif additional_service == "prometheus_grafana":
             # Allow prometheus to be launched last so is able to collect metrics from other services
             launch_prometheus_grafana = True
