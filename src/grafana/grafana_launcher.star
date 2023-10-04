@@ -154,7 +154,7 @@ def new_additional_dashboards_data(plan, additional_dashboards):
             additional_dashboard_name,
         )
         additional_dashboard_artifact_name = plan.upload_files(
-            dashboard_path,
+            "../../" + dashboard_path, # Use path relative to project root
             name=additional_dashboard_name,
         )
         data.append(
