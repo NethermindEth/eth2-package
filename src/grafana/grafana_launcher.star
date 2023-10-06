@@ -144,7 +144,7 @@ def new_dashboard_providers_config_template_data(dashboards_dirpath):
 
 def new_additional_dashboards_data(plan, additional_dashboards):
     data = []
-    for index, dashboard_path in enumerate(additional_dashboards):
+    for index, dashboard_src in enumerate(additional_dashboards):
         additional_dashboard_name = "{}-{}".format(
             GRAFANA_ADDITIONAL_DASHBOARDS_NAME,
             index,
@@ -154,7 +154,7 @@ def new_additional_dashboards_data(plan, additional_dashboards):
             additional_dashboard_name,
         )
         additional_dashboard_artifact_name = plan.upload_files(
-            "../../" + dashboard_path, # Use path relative to project root
+            dashboard_src,
             name=additional_dashboard_name,
         )
         data.append(
